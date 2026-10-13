@@ -165,8 +165,12 @@
     const list = mergedEntries().filter((e) => !e.reclaim).sort((a, b) => (b.t || 0) - (a.t || 0) || b.tod - a.tod).slice(0, 12);
     const key = list.map((e) => e.id).join(',') + CAPK; if (key === bandKey) return; bandKey = key;
     const one = list.map((e) => `<span>${e.minutes} min · ${esc(e.text)}</span><i>✦</i>`).join('') || '<span>Nothing lost yet today</span><i>✦</i>';
-    $('#bandIn').innerHTML = one + one;
+     $('#bandIn').innerHTML = one + one; restartBand();
   }
+  // Safari works out the marquee's -50% slide when the animation starts (while the band is still
+  // empty, or before the fonts load) and never recomputes it, so the text would sit still until a
+  // tab switch. Restart it whenever its width changes.
+  function restartBand() { const b = $('#bandIn'); b.style.animation = 'none'; void b.offsetWidth; b.style.animation = ''; }
 
   /* ---------- explosion ---------- */
   function explode() {
@@ -446,7 +450,7 @@
     $('#moodRange').oninput = (e) => { dressStage = +e.target.value; e.target.setAttribute('aria-valuetext', MOODS[dressStage]); showMood(); drawDress(); };
     $('#dice').onclick = () => (spinT ? stopSpin() : startSpin());
     window.addEventListener('hashchange', route);
-    window.addEventListener('resize', fitStage); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitStage);
+    window.addEventListener('resize', fitStage); if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fitStage(); restartBand(); });
     window.addEventListener('ltm-store', () => { Store.list(state.day).then((l) => { state.stored = l; tick(); }); });
     window.addEventListener('storage', () => refresh());
     if (/[?&]demo/.test(location.search)) buildDemo();
